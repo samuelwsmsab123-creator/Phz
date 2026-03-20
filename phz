@@ -1,0 +1,482 @@
+--[[
+    ZZ HUB - SILVA MODZ ED
+    Estilo:  ()
+    Desenvolvedor: Silva Modz
+    Key: monite
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- ================================================
+--              CONFIGURAÇÕES E ESTADO
+-- ================================================
+
+local CORRECT_KEY = "monite"
+local BloodMode = false
+local AimbotEnabled = false
+local MagnetEnabled = false
+local VisibleCheck = true
+local IgnoreBots = true
+local IgnoreCars = true
+local AlwaysHeadshot = false
+local AimbotLegitEnabled = false
+local AimbotFOV = 100 -- Valor inicial salvo
+local ShowFOV = false
+local SpinBotEnabled = false
+local SpinSpeed = 100
+local TeleportKillEnabled = false
+local NoclipEnabled = false
+local DoubleJumpEnabled = false
+local CurrentLang = "PT"
+local FPS = 0
+
+local ESPSettings = {
+    Box3D = false,
+    Linha = false,
+    Vida = false,
+    Esqueleto = false,
+    Nome = false,
+    Distancia = false,
+    LinhaRGB = false
+}
+
+local LangData = {
+    PT = {Main="Aimbot", Visual="Visual", Menu="Menu", Full="Config", AimbotRage="Aimbot Rage", Magnet="Magnet (Puxar)", NoWall="Sem Puxar Paredes", IgnoreBot="Ignorar Bots", IgnoreCar="Ignorar Carros", AimbotLegit="Aimbot Legit", ShowFOV="Exibir FOV", FOVRadius="Raio do FOV", ESPBox="ESP Box 3D", ESPLine="ESP Linha", ESPHealth="ESP Vida", ESPSkeleton="ESP Esqueleto", ESPName="ESP Nome", SpinBot="Spin Bot (100)", TeleportKill="Teleport Kill (Manual)", Headshot="Force Headshot", Noclip="Noclip", Lang="MUDAR IDIOMA", FPS="FPS"},
+    EN = {Main="Aimbot", Visual="Visual", Menu="Menu", Full="Config", AimbotRage="Aimbot Rage", Magnet="Magnet (Pull)", NoWall="Visible Check", IgnoreBot="Ignore Bots", IgnoreCar="Ignore Cars", AimbotLegit="Aimbot Legit", ShowFOV="Show FOV", FOVRadius="FOV Radius", ESPBox="ESP Box 3D", ESPLine="ESP Line", ESPHealth="ESP Health", ESPSkeleton="ESP Skeleton", ESPName="ESP Name", SpinBot="Spin Bot (100)", TeleportKill="Teleport Kill (Manual)", Headshot="Force Headshot", Noclip="Noclip", Lang="CHANGE LANGUAGE", FPS="FPS"},
+    ES = {Main="Aimbot", Visual="Visual", Menu="Menu", Full="Config", AimbotRage="Aimbot Rage", Magnet="Magnet (Atraer)", NoWall="Check Visible", IgnoreBot="Ignorar Bots", IgnoreCar="Ignorar Carros", AimbotLegit="Aimbot Legit", ShowFOV="Mostrar FOV", FOVRadius="Radio del FOV", ESPBox="ESP Box 3D", ESPLine="ESP Línea", ESPHealth="ESP Vida", ESPSkeleton="ESP Esqueleto", ESPName="ESP Nombre", SpinBot="Spin Bot (100)", TeleportKill="Teleport Kill (Manual)", Headshot="Force Headshot", Noclip="Noclip", Lang="CAMBIAR IDIOMA", FPS="FPS"}
+}
+
+local C = {
+    MainBG = Color3.fromRGB(15, 15, 15),
+    SidebarBG = Color3.fromRGB(10, 10, 10),
+    Accent = Color3.fromRGB(200, 30, 30),
+    Blood = Color3.fromRGB(139, 0, 0),
+    Text = Color3.fromRGB(240, 240, 240),
+    ToggleOff = Color3.fromRGB(40, 40, 45),
+    ToggleOn = Color3.fromRGB(200, 30, 30),
+    Visible = Color3.fromRGB(0, 255, 0),
+    InVisible = Color3.fromRGB(255, 0, 0)
+}
+
+-- ================================================
+--              LISTA DE ÍCONES (IMAGENS RAW)
+-- ================================================
+local IconURLs = {
+    [1] = "https://www.dropbox.com/scl/fi/su0cf1yyef2fpn3v76qum/image-3.png?rlkey=r00whrncbv1dufrgb746ss9yl&raw=1", -- Ícone para Main
+    [2] = "https://www.dropbox.com/scl/fi/yx7cgmh1hixtvs1gaxvv0/image-1.png?rlkey=df2ytvot7nsi0l9v0ipfaohkp&raw=1", -- Ícone para Visual
+    [3] = "https://www.dropbox.com/scl/fi/tcc0bdz5ew7etn5ehbjqo/image-2.png?rlkey=7s65ramolvalstc9a1t5vj6u9&raw=1", -- Ícone para Menu
+    [4] = "https://www.dropbox.com/scl/fi/7hycq2e74nl38bvuydsfm/image.png?rlkey=slgxsmjwii28p9j9gzplzcr60&raw=1", -- Ícone para Full
+    [5] = "https://www.dropbox.com/scl/fi/m26u2yxeynfc0jeuim8wj/Notifications_-_iPhone.png?rlkey=n7ssbp5vded5b1xs8al4kasjz&raw=1" -- Ícone extra (não usado)
+}
+
+-- ================================================
+--              UTILITÁRIOS
+-- ================================================
+
+local function Create(class, props)
+    local o = Instance.new(class)
+    for k, v in pairs(props) do if k ~= "Parent" then o[k] = v end end
+    if props.Parent then o.Parent = props.Parent end
+    return o
+end
+
+local function MakeDraggable(frame, handle)
+    local drag, dStart, sPos = false, nil, nil
+    handle.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true; dStart = i.Position; sPos = frame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = i.Position - dStart
+            frame.Position = UDim2.new(sPos.X.Scale, sPos.X.Offset+d.X, sPos.Y.Scale, sPos.Y.Offset+d.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
+    end)
+end
+
+local function IsVisible(part)
+    if not part then return false end
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+    local origin = Camera.CFrame.Position
+    local direction = (part.Position - origin).Unit * (part.Position - origin).Magnitude
+    local result = workspace:Raycast(origin, direction, params)
+    return result == nil or result.Instance:IsDescendantOf(part.Parent)
+end
+
+-- ================================================
+--              SISTEMA DE ESP & FOV
+-- ================================================
+
+local ESP_Objects = {}
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1; FOVCircle.NumSides = 100; FOVCircle.Radius = AimbotFOV; FOVCircle.Filled = false; FOVCircle.Visible = false; FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+
+local function CreateESP(player)
+    local objects = {
+        Box3D = {Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line"), Drawing.new("Line")},
+        Line = Drawing.new("Line"),
+        Name = Drawing.new("Text"),
+        Distance = Drawing.new("Text"),
+        HealthBarBG = Drawing.new("Square"),
+        HealthBar = Drawing.new("Square"),
+        Skeleton = {}
+    }
+    for _, line in pairs(objects.Box3D) do line.Thickness = 1.5 end
+    objects.Line.Thickness = 1.5
+    objects.Name.Size = 14; objects.Name.Center = true; objects.Name.Outline = true
+    objects.Distance.Size = 12; objects.Distance.Center = true; objects.Distance.Outline = true
+    objects.HealthBarBG.Filled = true; objects.HealthBarBG.Color = Color3.fromRGB(0,0,0)
+    objects.HealthBar.Filled = true
+    for i = 1, 15 do objects.Skeleton[i] = Drawing.new("Line"); objects.Skeleton[i].Thickness = 2.5 end
+    ESP_Objects[player] = objects
+end
+
+local function UpdateESP()
+    FOVCircle.Visible = ShowFOV; FOVCircle.Radius = AimbotFOV; FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    for player, objects in pairs(ESP_Objects) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local char = player.Character; local hrp = char.HumanoidRootPart; local hum = char.Humanoid
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if onScreen then
+                local visible = IsVisible(char:FindFirstChild("Head") or hrp)
+                local espColor = visible and C.Visible or C.InVisible
+                if ESPSettings.LinhaRGB then espColor = Color3.fromHSV(tick() % 5 / 5, 1, 1) end
+
+                if ESPSettings.Box3D then
+                    local size = Vector3.new(2, 3, 2); local cf = hrp.CFrame
+                    local points = {
+                        Camera:WorldToViewportPoint((cf * CFrame.new(size.X, size.Y, size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(-size.X, size.Y, size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(-size.X, -size.Y, size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(size.X, -size.Y, size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(size.X, size.Y, -size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(-size.X, size.Y, -size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(-size.X, -size.Y, -size.Z)).Position),
+                        Camera:WorldToViewportPoint((cf * CFrame.new(size.X, -size.Y, -size.Z)).Position)
+                    }
+                    local lines = {{1,2},{2,3},{3,4},{4,1},{5,6},{6,7},{7,8},{8,5},{1,5},{2,6},{3,7},{4,8}}
+                    for i, edge in pairs(lines) do
+                        objects.Box3D[i].Visible = true; objects.Box3D[i].From = Vector2.new(points[edge[1]].X, points[edge[1]].Y); objects.Box3D[i].To = Vector2.new(points[edge[2]].X, points[edge[2]].Y); objects.Box3D[i].Color = espColor
+                    end
+                else for _, l in pairs(objects.Box3D) do l.Visible = false end end
+
+                objects.Line.Visible = ESPSettings.Linha; if ESPSettings.Linha then objects.Line.From = Vector2.new(Camera.ViewportSize.X / 2, 0); objects.Line.To = Vector2.new(pos.X, pos.Y); objects.Line.Color = espColor end
+
+                objects.HealthBarBG.Visible = ESPSettings.Vida; objects.HealthBar.Visible = ESPSettings.Vida
+                if ESPSettings.Vida then
+                    local headPos = Camera:WorldToViewportPoint(char.Head.Position + Vector3.new(0, 0.5, 0)); local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+                    local height = math.abs(headPos.Y - legPos.Y); local width = height / 2; local hpPercent = hum.Health / hum.MaxHealth
+                    objects.HealthBarBG.Size = Vector2.new(2, height); objects.HealthBarBG.Position = Vector2.new(pos.X - width/2 - 6, pos.Y - height/2)
+                    objects.HealthBar.Size = Vector2.new(2, height * hpPercent); objects.HealthBar.Position = Vector2.new(pos.X - width/2 - 6, pos.Y + height/2 - (height * hpPercent)); objects.HealthBar.Color = Color3.fromRGB(255 - (255 * hpPercent), 255 * hpPercent, 0)
+                end
+
+                local parts = hum.RigType == Enum.HumanoidRigType.R15 and {{"Head","UpperTorso"},{"UpperTorso","LowerTorso"},{"UpperTorso","LeftUpperArm"},{"LeftUpperArm","LeftLowerArm"},{"UpperTorso","RightUpperArm"},{"RightUpperArm","RightLowerArm"},{"LowerTorso","LeftUpperLeg"},{"LeftUpperLeg","LeftLowerLeg"},{"LowerTorso","RightUpperLeg"},{"RightUpperLeg","RightLowerLeg"}} or {{"Head","Torso"},{"Torso","Left Arm"},{"Torso","Right Arm"},{"Torso","Left Leg"},{"Torso","Right Leg"}}
+                for i, p in pairs(parts) do
+                    local line = objects.Skeleton[i]
+                    if ESPSettings.Esqueleto and char:FindFirstChild(p[1]) and char:FindFirstChild(p[2]) then
+                        local p1, v1 = Camera:WorldToViewportPoint(char[p[1]].Position); local p2, v2 = Camera:WorldToViewportPoint(char[p[2]].Position)
+                        line.Visible = v1 and v2; line.From = Vector2.new(p1.X, p1.Y); line.To = Vector2.new(p2.X, p2.Y); line.Color = espColor
+                    else line.Visible = false end
+                end
+                objects.Name.Visible = ESPSettings.Nome; objects.Name.Text = player.Name; objects.Name.Position = Vector2.new(pos.X, pos.Y - 40); objects.Name.Color = Color3.fromRGB(255,255,255)
+                objects.Distance.Visible = ESPSettings.Distancia; local d = math.floor((hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude); objects.Distance.Text = "["..d.."m]"; objects.Distance.Position = Vector2.new(pos.X, pos.Y + 40); objects.Distance.Color = Color3.fromRGB(255,255,0)
+            else for _, v in pairs(objects) do if type(v) == "table" then for _, l in pairs(v) do l.Visible = false end else v.Visible = false end end end
+        end
+    end
+end
+
+-- ================================================
+--              INTERFACE PRINCIPAL
+-- ================================================
+
+local ScreenGui = Create("ScreenGui", {Name = "ZZHubSilvaModz", Parent = game.CoreGui, ZIndexBehavior = Enum.ZIndexBehavior.Global})
+
+-- Sistema de Key
+local KeyFrame = Create("Frame", {Size = UDim2.new(0, 350, 0, 200), Position = UDim2.new(0.5, -175, 0.5, -100), BackgroundColor3 = C.MainBG, ZIndex = 100, Parent = ScreenGui})
+Create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = KeyFrame})
+local KeyBorder = Create("UIStroke", {Thickness = 2.5, Color = C.Accent, Parent = KeyFrame})
+local KeyTitle = Create("TextLabel", {Text = "ZZ HUB - KEY SYSTEM", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 101, Parent = KeyFrame})
+local KeyInput = Create("TextBox", {PlaceholderText = "Digite a Key aqui...", Size = UDim2.new(0.8, 0, 0, 40), Position = UDim2.new(0.1, 0, 0.4, 0), BackgroundColor3 = C.SidebarBG, TextColor3 = C.Text, Font = Enum.Font.Gotham, ZIndex = 101, Parent = KeyFrame})
+Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = KeyInput})
+local KeyBtn = Create("TextButton", {Text = "ENTRAR", Size = UDim2.new(0.6, 0, 0, 40), Position = UDim2.new(0.2, 0, 0.7, 0), BackgroundColor3 = C.Accent, TextColor3 = C.Text, Font = Enum.Font.GothamBold, ZIndex = 101, Parent = KeyFrame})
+Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = KeyBtn})
+
+-- Tela de Bem-Vindo
+local WelcomeFrame = Create("Frame", {Size = UDim2.new(0, 350, 0, 200), Position = UDim2.new(0.5, -175, 0.5, -100), BackgroundColor3 = C.MainBG, Visible = false, ZIndex = 100, Parent = ScreenGui})
+Create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = WelcomeFrame})
+local WelcomeBorder = Create("UIStroke", {Thickness = 2.5, Color = C.Accent, Parent = WelcomeFrame})
+local WelcomeTitle = Create("TextLabel", {Text = "BEM-VINDO AO ZZ HUB", Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1, TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 22, ZIndex = 101, Parent = WelcomeFrame})
+local OpenLayoutBtn = Create("TextButton", {Text = "ABRIR LAYOUT", Size = UDim2.new(0.7, 0, 0, 45), Position = UDim2.new(0.15, 0, 0.6, 0), BackgroundColor3 = C.Accent, TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 16, ZIndex = 101, Parent = WelcomeFrame})
+Create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = OpenLayoutBtn})
+
+-- Layout Principal
+local MainFrame = Create("Frame", {Size = UDim2.new(0, 500, 0, 320), Position = UDim2.new(0.5, -250, 0.5, -160), BackgroundColor3 = C.MainBG, Visible = false, ZIndex = 10, Parent = ScreenGui})
+Create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = MainFrame})
+local MainBorder = Create("UIStroke", {Thickness = 1.5, Color = Color3.fromRGB(50, 50, 50), Parent = MainFrame})
+
+-- Sidebar
+local Sidebar = Create("Frame", {Size = UDim2.new(0, 60, 1, 0), BackgroundColor3 = C.SidebarBG, ZIndex = 11, Parent = MainFrame})
+Create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = Sidebar})
+local SidebarIconList = Create("Frame", {Size = UDim2.new(1, 0, 1, -80), Position = UDim2.new(0, 0, 0, 10), BackgroundTransparency = 1, ZIndex = 12, Parent = Sidebar})
+local UIList = Create("UIListLayout", {Parent = SidebarIconList, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 10)})
+
+-- Footer Credits
+local Credits = Create("TextLabel", {Text = "by silva modz", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 1, -30), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(80, 80, 80), Font = Enum.Font.Gotham, TextSize = 9, ZIndex = 12, Parent = Sidebar})
+
+-- Header
+local Header = Create("Frame", {Size = UDim2.new(1, -70, 0, 40), Position = UDim2.new(0, 70, 0, 5), BackgroundTransparency = 1, ZIndex = 12, Parent = MainFrame})
+local HeaderTitle = Create("TextLabel", {Text = "🎯 AIMBOT", Size = UDim2.new(0, 180, 1, 0), BackgroundTransparency = 1, TextColor3 = C.Accent, Font = Enum.Font.GothamBold, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13, Parent = Header})
+
+-- Botoes Superiores (Lua ao lado do X)
+local TopButtons = Create("Frame", {Size = UDim2.new(0, 80, 1, 0), Position = UDim2.new(1, -85, 0, 0), BackgroundTransparency = 1, ZIndex = 13, Parent = Header})
+local MoonBtn = Create("TextButton", {Text = "🌙", Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0, 0, 0.5, -15), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 20, ZIndex = 14, Parent = TopButtons})
+local CloseBtn = Create("TextButton", {Text = "X", Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0, 40, 0.5, -15), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(150, 150, 150), Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 14, Parent = TopButtons})
+
+-- Container
+local Container = Create("Frame", {Size = UDim2.new(1, -80, 1, -60), Position = UDim2.new(0, 70, 0, 50), BackgroundTransparency = 1, ZIndex = 11, Parent = MainFrame})
+local TabFrames = {}
+local TogglesList = {}
+
+-- Botão Flutuante
+local FloatingBtn = Create("TextButton", {Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0, 10, 0.5, -25), BackgroundColor3 = C.Accent, Text = "ZZ", TextColor3 = C.Text, Font = Enum.Font.GothamBold, Visible = false, ZIndex = 20, Parent = ScreenGui})
+Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = FloatingBtn})
+Create("UIStroke", {Thickness = 2, Color = Color3.fromRGB(255,255,255), Parent = FloatingBtn})
+MakeDraggable(FloatingBtn, FloatingBtn)
+
+-- Lógica Interface
+KeyBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CORRECT_KEY then
+        KeyFrame.Visible = false; WelcomeFrame.Visible = true
+    else
+        KeyInput.Text = ""; KeyInput.PlaceholderText = "Key Incorreta!"
+    end
+end)
+OpenLayoutBtn.MouseButton1Click:Connect(function() WelcomeFrame.Visible = false; MainFrame.Visible = true; FloatingBtn.Visible = true end)
+FloatingBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+MakeDraggable(MainFrame, Sidebar)
+
+-- Sangue saindo do Menu
+local function SpawnBloodParticle()
+    local p = Create("Frame", {Size = UDim2.new(0, 4, 0, 4), Position = UDim2.new(math.random(), 0, 0, 0), BackgroundColor3 = C.Blood, BackgroundTransparency = 0.2, Parent = MainFrame})
+    Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = p})
+    local targetPos = UDim2.new(p.Position.X.Scale, math.random(-50, 50), 1.2, 0)
+    local t = TweenService:Create(p, TweenInfo.new(1, Enum.EasingStyle.Linear), {Position = targetPos, BackgroundTransparency = 1})
+    t:Play(); t.Completed:Connect(function() p:Destroy() end)
+end
+
+-- Modo Sangue (Lua)
+MoonBtn.MouseButton1Click:Connect(function()
+    BloodMode = not BloodMode
+    local targetColor = BloodMode and C.Blood or C.Accent
+    HeaderTitle.TextColor3 = targetColor; MainBorder.Color = BloodMode and C.Blood or Color3.fromRGB(50, 50, 50); FloatingBtn.BackgroundColor3 = targetColor; MoonBtn.TextColor3 = targetColor
+    if BloodMode then task.spawn(function() while BloodMode do SpawnBloodParticle(); task.wait(0.1) end end) end
+end)
+
+-- Tradução
+local function UpdateLanguage()
+    for key, data in pairs(TogglesList) do data.label.Text = LangData[CurrentLang][key] end
+    HeaderTitle.Text = "🎯 " .. LangData[CurrentLang][TabFrames.currentTabName]:upper()
+end
+
+-- Função de Adicionar Aba (MODIFICADA para ImageButton)
+local function AddTab(name, iconIndex, order)
+    local iconUrl = IconURLs[iconIndex] or "" -- Pega a URL baseada no índice
+
+    -- Criar ImageButton em vez de TextButton
+    local btn = Create("ImageButton", {
+        Size = UDim2.new(0, 40, 0, 40),
+        BackgroundTransparency = 1, -- Fundo transparente
+        Image = iconUrl, -- URL da imagem
+        ScaleType = Enum.ScaleType.Fit, -- Ajusta a imagem ao botão
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255), -- Cor de fundo (influencia na cor da imagem se ela tiver transparência)
+        ImageColor3 = (order == 1) and C.Accent or Color3.fromRGB(150, 150, 150), -- Cor da imagem: destaque para a primeira, cinza para as outras
+        ZIndex = 13,
+        Parent = SidebarIconList
+    })
+
+    -- Criar o frame da aba (igual ao original)
+    local frame = Create("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = (order == 1),
+        ZIndex = 13,
+        Parent = Container,
+        ScrollBarThickness = 2,
+        CanvasSize = UDim2.new(0, 0, 1.5, 0)
+    })
+    Create("UIListLayout", {Parent = frame, Padding = UDim.new(0, 8)})
+
+    TabFrames[name] = {frame = frame, btn = btn}
+    if order == 1 then TabFrames.currentTabName = name end
+
+    -- Lógica de clique (ajustada para ImageButton)
+    btn.MouseButton1Click:Connect(function()
+        for k, t in pairs(TabFrames) do
+            if type(t) == "table" then
+                t.frame.Visible = false
+                -- Mudar a cor da imagem do botão para cinza quando não selecionado
+                if t.btn:IsA("ImageButton") then
+                    t.btn.ImageColor3 = Color3.fromRGB(150, 150, 150)
+                end
+            end
+        end
+        frame.Visible = true
+        -- Mudar a cor da imagem do botão atual para a cor de destaque
+        btn.ImageColor3 = BloodMode and C.Blood or C.Accent
+        TabFrames.currentTabName = name
+        HeaderTitle.Text = "🎯 " .. LangData[CurrentLang][name]:upper()
+    end)
+
+    return frame
+end
+
+-- Função de Adicionar Toggle
+local function AddToggle(parent, langKey, callback)
+    local row = Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(25, 25, 25), ZIndex = 14, Parent = parent})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = row})
+    local label = Create("TextLabel", {Text = LangData[CurrentLang][langKey], Size = UDim2.new(0.7, 0, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(200, 200, 200), Font = Enum.Font.Gotham, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 15, Parent = row})
+    local tog = Create("TextButton", {Text = "", Size = UDim2.new(0, 35, 0, 18), Position = UDim2.new(1, -45, 0.5, -9), BackgroundColor3 = C.ToggleOff, ZIndex = 15, Parent = row})
+    Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = tog})
+    local circle = Create("Frame", {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 2, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 16, Parent = tog})
+    Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = circle})
+    local state = false
+    TogglesList[langKey] = {label = label}
+    tog.MouseButton1Click:Connect(function()
+        state = not state
+        tog.BackgroundColor3 = state and (BloodMode and C.Blood or C.Accent) or C.ToggleOff
+        circle.Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        callback(state)
+    end)
+end
+
+-- Função Slider (FOV FIX)
+local function AddSlider(parent, langKey, min, max, default, callback)
+    local row = Create("Frame", {Size = UDim2.new(1, -10, 0, 50), BackgroundColor3 = Color3.fromRGB(25, 25, 25), ZIndex = 14, Parent = parent})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = row})
+    local label = Create("TextLabel", {Text = LangData[CurrentLang][langKey]..": "..default, Size = UDim2.new(1, 0, 0, 25), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(200, 200, 200), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 15, Parent = row})
+    local sliderBg = Create("Frame", {Size = UDim2.new(0.9, 0, 0, 4), Position = UDim2.new(0.05, 0, 0.75, 0), BackgroundColor3 = Color3.fromRGB(50, 50, 50), ZIndex = 15, Parent = row})
+    local sliderFill = Create("Frame", {Size = UDim2.new((default-min)/(max-min), 0, 1, 0), BackgroundColor3 = C.Accent, ZIndex = 16, Parent = sliderBg})
+    local btn = Create("TextButton", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 17, Parent = sliderBg})
+    TogglesList[langKey] = {label = label}
+    btn.MouseButton1Down:Connect(function()
+        local conn; conn = RunService.RenderStepped:Connect(function()
+            local mouseX = UserInputService:GetMouseLocation().X
+            local rel = math.clamp((mouseX - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+            sliderFill.Size = UDim2.new(rel, 0, 1, 0)
+            local val = math.floor(min + (max - min) * rel)
+            label.Text = LangData[CurrentLang][langKey]..": "..val; callback(val)
+        end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() end end)
+    end)
+end
+
+-- ================================================
+--              PREENCHER ABAS
+-- ================================================
+
+-- Agora passamos o índice da imagem em vez do emoji
+local AimbotTab = AddTab("Main", 1, 1)   -- Ícone 1
+local VisualTab = AddTab("Visual", 2, 2) -- Ícone 2
+local MenuTab = AddTab("Menu", 3, 3)     -- Ícone 3
+local ConfigTab = AddTab("Full", 4, 4)   -- Ícone 4
+
+AddToggle(AimbotTab, "AimbotRage", function(v) AimbotEnabled = v end)
+AddToggle(AimbotTab, "Magnet", function(v) MagnetEnabled = v end)
+AddToggle(AimbotTab, "NoWall", function(v) VisibleCheck = v end)
+AddToggle(AimbotTab, "IgnoreBot", function(v) IgnoreBots = v end)
+AddToggle(AimbotTab, "IgnoreCar", function(v) IgnoreCars = v end)
+AddToggle(AimbotTab, "AimbotLegit", function(v) AimbotLegitEnabled = v end)
+AddToggle(AimbotTab, "ShowFOV", function(v) ShowFOV = v end)
+AddSlider(AimbotTab, "FOVRadius", 10, 500, AimbotFOV, function(v) AimbotFOV = v end)
+
+AddToggle(VisualTab, "ESPBox", function(v) ESPSettings.Box3D = v end)
+AddToggle(VisualTab, "ESPLine", function(v) ESPSettings.Linha = v end)
+AddToggle(VisualTab, "ESPHealth", function(v) ESPSettings.Vida = v end)
+AddToggle(VisualTab, "ESPSkeleton", function(v) ESPSettings.Esqueleto = v end)
+AddToggle(VisualTab, "ESPName", function(v) ESPSettings.Nome = v end)
+
+AddToggle(MenuTab, "SpinBot", function(v) SpinBotEnabled = v end)
+AddToggle(MenuTab, "TeleportKill", function(v) TeleportKillEnabled = v end)
+AddToggle(MenuTab, "Headshot", function(v) AlwaysHeadshot = v end)
+AddToggle(MenuTab, "Noclip", function(v) NoclipEnabled = v end)
+
+local FPSLabel = Create("TextLabel", {Text = "FPS: 0", Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(25, 25, 25), TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 14, Parent = ConfigTab})
+Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = FPSLabel})
+local LangBtn = Create("TextButton", {Text = "IDIOMA: PT", Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(25, 25, 25), TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 14, Parent = ConfigTab})
+Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = LangBtn})
+LangBtn.MouseButton1Click:Connect(function()
+    if CurrentLang == "PT" then CurrentLang = "EN" elseif CurrentLang == "EN" then CurrentLang = "ES" else CurrentLang = "PT" end
+    LangBtn.Text = LangData[CurrentLang]["Lang"] .. ": " .. CurrentLang; UpdateLanguage()
+end)
+
+-- ================================================
+--              LÓGICA DE JOGO
+-- ================================================
+
+local function GetClosestPlayer()
+    local target = nil; local dist = AimbotFOV
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            if IgnoreBots and (p.UserId <= 0 or p.Character:FindFirstChild("Bot")) then continue end
+            if VisibleCheck and not MagnetEnabled and not IsVisible(p.Character.Head) then continue end
+            local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if vis then
+                local d
+                if AimbotLegitEnabled then
+                    d = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                else
+                    d = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                end
+                if d < dist then dist = d; target = p end
+            end
+        end
+    end
+    return target
+end
+
+RunService.RenderStepped:Connect(function()
+    UpdateESP()
+    FPS = math.floor(1 / RunService.RenderStepped:Wait()); FPSLabel.Text = "FPS: " .. FPS
+    local target = GetClosestPlayer()
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            if AimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                local targetPart = target.Character.Head
+                if AlwaysHeadshot then
+                    targetPart = target.Character:FindFirstChild("Head") or target.Character.Head
+                end
+                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPart.Position), 0.2)
+            end
+        if MagnetEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+            target.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -10)
+        end
+    end
+    if TeleportKillEnabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3); task.wait(0.1); break
+            end
+        end
+    end
+    if SpinBotEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(SpinSpeed), 0)
+    end
+    if NoclipEnabled and LocalPlayer.Character then
+        for _, p in pairs(LocalPlayer.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+    end
+end)
+
+for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then CreateESP(p) end end
+Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then CreateESP(p) end end)
+print("ZZ HUB SILVA MODZ EDITION CARREGADO!")
