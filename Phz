@@ -1,5 +1,5 @@
 --[[
-    ZZ HUB - SILVA MODZ 
+    ZZ HUB - SILVA MODZ ED
     Estilo:  ()
     Desenvolvedor: Silva Modz
     Key: monite
@@ -16,7 +16,7 @@ local Camera = workspace.CurrentCamera
 --              CONFIGURAÇÕES E ESTADO
 -- ================================================
 
-local CORRECT_KEY = "monite"
+local CORRECT_KEY = "Hari"
 local BloodMode = false
 local AimbotEnabled = false
 local MagnetEnabled = false
@@ -61,17 +61,6 @@ local C = {
     ToggleOn = Color3.fromRGB(200, 30, 30),
     Visible = Color3.fromRGB(0, 255, 0),
     InVisible = Color3.fromRGB(255, 0, 0)
-}
-
--- ================================================
---              LISTA DE ÍCONES (IMAGENS RAW)
--- ================================================
-local IconURLs = {
-    [1] = "https://www.dropbox.com/scl/fi/su0cf1yyef2fpn3v76qum/image-3.png?rlkey=r00whrncbv1dufrgb746ss9yl&raw=1", -- Ícone para Main
-    [2] = "https://www.dropbox.com/scl/fi/yx7cgmh1hixtvs1gaxvv0/image-1.png?rlkey=df2ytvot7nsi0l9v0ipfaohkp&raw=1", -- Ícone para Visual
-    [3] = "https://www.dropbox.com/scl/fi/tcc0bdz5ew7etn5ehbjqo/image-2.png?rlkey=7s65ramolvalstc9a1t5vj6u9&raw=1", -- Ícone para Menu
-    [4] = "https://www.dropbox.com/scl/fi/7hycq2e74nl38bvuydsfm/image.png?rlkey=slgxsmjwii28p9j9gzplzcr60&raw=1", -- Ícone para Full
-    [5] = "https://www.dropbox.com/scl/fi/m26u2yxeynfc0jeuim8wj/Notifications_-_iPhone.png?rlkey=n7ssbp5vded5b1xs8al4kasjz&raw=1" -- Ícone extra (não usado)
 }
 
 -- ================================================
@@ -290,55 +279,18 @@ local function UpdateLanguage()
     HeaderTitle.Text = "🎯 " .. LangData[CurrentLang][TabFrames.currentTabName]:upper()
 end
 
--- Função de Adicionar Aba (MODIFICADA para ImageButton)
-local function AddTab(name, iconIndex, order)
-    local iconUrl = IconURLs[iconIndex] or "" -- Pega a URL baseada no índice
-
-    -- Criar ImageButton em vez de TextButton
-    local btn = Create("ImageButton", {
-        Size = UDim2.new(0, 40, 0, 40),
-        BackgroundTransparency = 1, -- Fundo transparente
-        Image = iconUrl, -- URL da imagem
-        ScaleType = Enum.ScaleType.Fit, -- Ajusta a imagem ao botão
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255), -- Cor de fundo (influencia na cor da imagem se ela tiver transparência)
-        ImageColor3 = (order == 1) and C.Accent or Color3.fromRGB(150, 150, 150), -- Cor da imagem: destaque para a primeira, cinza para as outras
-        ZIndex = 13,
-        Parent = SidebarIconList
-    })
-
-    -- Criar o frame da aba (igual ao original)
-    local frame = Create("ScrollingFrame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Visible = (order == 1),
-        ZIndex = 13,
-        Parent = Container,
-        ScrollBarThickness = 2,
-        CanvasSize = UDim2.new(0, 0, 1.5, 0)
-    })
+-- Função de Adicionar Aba
+local function AddTab(name, icon, order)
+    local btn = Create("TextButton", {Text = icon, Size = UDim2.new(0, 40, 0, 40), BackgroundTransparency = 1, TextColor3 = (order == 1) and C.Accent or Color3.fromRGB(100, 100, 100), Font = Enum.Font.GothamBold, TextSize = 20, ZIndex = 13, Parent = SidebarIconList})
+    local frame = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = (order == 1), ZIndex = 13, Parent = Container, ScrollBarThickness = 2, CanvasSize = UDim2.new(0, 0, 1.5, 0)})
     Create("UIListLayout", {Parent = frame, Padding = UDim.new(0, 8)})
-
     TabFrames[name] = {frame = frame, btn = btn}
     if order == 1 then TabFrames.currentTabName = name end
-
-    -- Lógica de clique (ajustada para ImageButton)
     btn.MouseButton1Click:Connect(function()
-        for k, t in pairs(TabFrames) do
-            if type(t) == "table" then
-                t.frame.Visible = false
-                -- Mudar a cor da imagem do botão para cinza quando não selecionado
-                if t.btn:IsA("ImageButton") then
-                    t.btn.ImageColor3 = Color3.fromRGB(150, 150, 150)
-                end
-            end
-        end
-        frame.Visible = true
-        -- Mudar a cor da imagem do botão atual para a cor de destaque
-        btn.ImageColor3 = BloodMode and C.Blood or C.Accent
-        TabFrames.currentTabName = name
+        for k, t in pairs(TabFrames) do if type(t) == "table" then t.frame.Visible = false; t.btn.TextColor3 = Color3.fromRGB(100, 100, 100) end end
+        frame.Visible = true; btn.TextColor3 = BloodMode and C.Blood or C.Accent; TabFrames.currentTabName = name
         HeaderTitle.Text = "🎯 " .. LangData[CurrentLang][name]:upper()
     end)
-
     return frame
 end
 
@@ -386,12 +338,7 @@ end
 --              PREENCHER ABAS
 -- ================================================
 
--- Agora passamos o índice da imagem em vez do emoji
-local AimbotTab = AddTab("Main", 1, 1)   -- Ícone 1
-local VisualTab = AddTab("Visual", 2, 2) -- Ícone 2
-local MenuTab = AddTab("Menu", 3, 3)     -- Ícone 3
-local ConfigTab = AddTab("Full", 4, 4)   -- Ícone 4
-
+local AimbotTab = AddTab("Main", "⌖", 1)
 AddToggle(AimbotTab, "AimbotRage", function(v) AimbotEnabled = v end)
 AddToggle(AimbotTab, "Magnet", function(v) MagnetEnabled = v end)
 AddToggle(AimbotTab, "NoWall", function(v) VisibleCheck = v end)
@@ -401,17 +348,19 @@ AddToggle(AimbotTab, "AimbotLegit", function(v) AimbotLegitEnabled = v end)
 AddToggle(AimbotTab, "ShowFOV", function(v) ShowFOV = v end)
 AddSlider(AimbotTab, "FOVRadius", 10, 500, AimbotFOV, function(v) AimbotFOV = v end)
 
+local VisualTab = AddTab("Visual", "👁", 2)
 AddToggle(VisualTab, "ESPBox", function(v) ESPSettings.Box3D = v end)
 AddToggle(VisualTab, "ESPLine", function(v) ESPSettings.Linha = v end)
 AddToggle(VisualTab, "ESPHealth", function(v) ESPSettings.Vida = v end)
 AddToggle(VisualTab, "ESPSkeleton", function(v) ESPSettings.Esqueleto = v end)
 AddToggle(VisualTab, "ESPName", function(v) ESPSettings.Nome = v end)
 
+local MenuTab = AddTab("Menu", "⚔", 3)
 AddToggle(MenuTab, "SpinBot", function(v) SpinBotEnabled = v end)
 AddToggle(MenuTab, "TeleportKill", function(v) TeleportKillEnabled = v end)
 AddToggle(MenuTab, "Headshot", function(v) AlwaysHeadshot = v end)
 AddToggle(MenuTab, "Noclip", function(v) NoclipEnabled = v end)
-
+local ConfigTab = AddTab("Full", "📦", 4)
 local FPSLabel = Create("TextLabel", {Text = "FPS: 0", Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(25, 25, 25), TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 14, Parent = ConfigTab})
 Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = FPSLabel})
 local LangBtn = Create("TextButton", {Text = "IDIOMA: PT", Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(25, 25, 25), TextColor3 = C.Text, Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 14, Parent = ConfigTab})
